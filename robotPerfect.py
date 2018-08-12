@@ -6,59 +6,35 @@ from datetime import datetime
 import random , glob , subprocess
 
 GPIO.setmode(GPIO.BCM)
-
-
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(23, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-previous = None
-previoush = None
+previous_robot = None
+previous_human = None
+curdir = os.path.dirname(os.path.realpath(__file__))
 
-
-def rndhmp3 (previous):
-   pattern = "/home/pi/or/mp3h/*.mp3" # (or "*.*")
-   randomfile = random.choice(glob.glob(pattern))
-   if randomfile == previoush:
-    return rndhmp3 (previoush)
-   else:
-    return randomfile
- 
-def rndmp3 (previous):
-   pattern = "/home/pi/or/mp3/*.mp3" # (or "*.*")
-   randomfile = random.choice(glob.glob(pattern))
+def play_random(voice, previous):
+   pattern = "/mp3h/*.mp3" if voice == "human" else "/mp3/*.mp3"
+   randomfile = random.choice(glob.glob(curdir + pattern))
    if randomfile == previous:
-    return rndhmp3 (previous)
+    return play_random(voice, previous)
    else:
     return randomfile
-  
+
+def button_pressed(voice, previous):
+   random.seed(datetime.now())
+   time.sleep(0.2)
+   file = play_random(voice, previous)
+   os.system ('mpg123 ' + file)
+   return file
 
 while True:
     input_state = GPIO.input(18)
     if input_state == False:
-        print('Button Pressed')
-        random.seed(datetime.now())
-        print (random.seed)
-        time.sleep(0.2)
-        file = rndhmp3 (previoush)
-        previous = file
-        print ("1111111")
-        print(file)
-        os.system ('mpg123 ' + file)
-        print('Button Stoped')
-        
+       previous_human = button_pressed('human', previous_human)
+
     input_state = GPIO.input(23)
     if input_state == False:
-        random.seed(time.time())
-        print (random.seed)
-        print('Button Pressed')
-        time.sleep(0.2)
-        file = rndmp3 (previous)
-        previous = file
-        print ("1111111")
-        print(file)
-        os.system ('mpg123 ' + file)
-        print('Button Stoped')
-                
-GPIO.cleanup() 
-        
-        
+        previous_robot = button_pressed('robot', previous_robot)
+
+GPIO.cleanup()
